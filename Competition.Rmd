@@ -1,0 +1,321 @@
+---
+title: "Untitled"
+output: html_document
+date: "2024-01-20"
+---
+
+# Libraries
+```{r}
+library(tidyverse)
+library(stringr)
+```
+
+### Data import
+```{r}
+df <- read.csv("~/Downloads/CAERS_ProductBased.csv")
+View(df)
+```
+
+### Cleaning "age"
+```{r}
+#------------------------------------- age Data exploration ------------
+table(df$AGE_UNITS) 
+summary(df$PATIENT_AGE)
+
+
+#------------------------------------- age Data wrangling ------------
+# 1. Clearly not all age units are in years
+
+df$AGE_UNITS <- trimws(df$AGE_UNITS) # Let's remove whitespace just in case
+
+conversion_rule <- data.frame(
+  AGE_UNITS = c("day(s)", "decade(s)", "month(s)", "week(s)", "year(s)"),
+  multiplier = c((1 / 365) , 10, (1 / 12), (1 / 52.143), 1)) # Decimal so we can represent a year with weeks 
+
+## Apply age change
+df1 <- df %>%
+  left_join(conversion_rule, by = "AGE_UNITS") %>%
+  mutate(age_in_years = PATIENT_AGE * multiplier) %>%
+  select(-multiplier)
+
+
+
+#2. Remove ages that do not seem realistic
+# Now we have everyone's age! Let's clean outliers or nonsene points
+summary(df1$age_in_years)
+
+# Age over 100? we see distributed values past 104, we remove
+df1 <- df1 %>%
+  filter(age_in_years <= 100)
+
+# Age under 1? - Seems to represent babies, so we keep
+explore_age <- df1 %>%
+  filter(age_in_years < 1)
+
+
+#--- Visual. Seems like there is a frequency peak for infants! we should seperate these 
+ggplot(df1, aes(x = age_in_years)) +
+  geom_histogram(color = "black") +
+  labs(
+    title = "Ages",
+    x = "Age in Years",
+    y = "Frequency") 
+
+
+#----- Remove under age 5 
+df1 <- df1 %>%
+  filter(age_in_years > 5)
+dim(df1)
+```
+
+
+### Cleaning "DESCRIPTION"
+```{r}
+
+#------------------------------------- DESCRIPTION Data exploration ------------
+
+#------ Making a % and count table
+DESCRIPTION_table <- df1 %>%
+  distinct(PRODUCT_CODE, DESCRIPTION) %>%
+  left_join(df1 %>%
+              group_by(DESCRIPTION) %>%
+              summarise(count = n()), by = "DESCRIPTION") %>%
+  mutate(percentage = (count/ sum(count)) * 100) %>%
+  arrange(desc(count))
+
+
+
+DESCRIPTION_table
+
+#--- Visual!
+DESCRIPTION_table$PRODUCT_CODE <- factor(DESCRIPTION_table$PRODUCT_CODE)
+
+ggplot(DESCRIPTION_table, aes(x = PRODUCT_CODE, y = percentage, fill = PRODUCT_CODE)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + # tilt so x-axis fits :)
+  labs(title = "Percentage of Each Product Code",
+       x = "Product Code",
+       y = "Percentage (%)")
+
+
+
+#------------------------------------- DESCRIPTION Data wrangling --------------
+
+# 1. Some 'descriptions' have the same exact count, percentage, and name! Look at "Fruit/Fruit prod" for example
+# it can't even be multiple logs for a person because some of these have 3 repeats (look at "fruit/fruit prod'). all of those ppl had exactly 3 reports? unlikely.
+##.  Let's get rid of these
+
+duplicates <- DESCRIPTION_table %>%
+  group_by(count, percentage) %>%    # Group by count and percentage
+  filter(n() > 1) %>%                # Filter groups with more than one row
+  ungroup()  
+  
+  
+table_with_flag <- DESCRIPTION_table %>%
+  group_by(count, percentage) %>%
+  mutate(dup_flag = n() > 1) %>%
+  ungroup()
+  
+values_to_remove <- table_with_flag %>%
+  filter(dup_flag == TRUE) %>%
+  group_by(count) %>%
+  filter(row_number() != 1) %>%
+  ungroup()
+
+df2 <- df1 %>%
+  anti_join(values_to_remove, by = "PRODUCT_CODE") # we removed the dupes!
+
+
+#--- Visual after cleaning
+
+# New lookup table
+DESCRIPTION_table2 <- df2 %>%
+  distinct(PRODUCT_CODE, DESCRIPTION) %>%
+  left_join(df2 %>%
+              group_by(DESCRIPTION) %>%
+              summarise(count = n()), by = "DESCRIPTION") %>%
+  mutate(percentage = (count/ sum(count)) * 100) %>%
+  arrange(desc(count))
+
+DESCRIPTION_table2
+
+
+
+df2$PRODUCT_CODE <- factor(df2$PRODUCT_CODE)
+
+ggplot(DESCRIPTION_table2, aes(x = PRODUCT_CODE, y = percentage, fill = PRODUCT_CODE)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + # tilt so x-axis fits :)
+  labs(title = "Percentage of Each Product Code",
+       x = "Product Code",
+       y = "Percentage (%)")
+
+
+#2. Given the graph above, we saw two classes dominate 
+```
+
+
+
+
+### SEX
+```{r}
+table(df2$SEX)
+
+
+#---- Clean "sex" data - Merge Uknown or empty strings into category "Not Reported"
+df3 <- df2 %>%
+  mutate(SEX = ifelse(SEX %in% c("Not Reported", "", "Unknown"), "Not Reported", SEX))
+table(df3$SEX)
+  
+
+#--- Remove "Not Reported" observations
+# There is not enough data for imputation so we remove these. We plan on using gender
+
+df3 <- df3 %>%
+  filter(SEX != "Not Reported") %>%
+  select(-c(PATIENT_AGE, AGE_UNITS, X))
+
+
+#---- Visual of gender and product
+ggplot(df3, aes(x = DESCRIPTION, fill = SEX)) +
+  geom_bar(position = "dodge") +
+  labs(
+    x = "Product Category",
+    y = "Count"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+-------------- Load in Python_1
+### Load our Python Data
+```{r}
+# This file is equivalent to df3 + the text preprocessing done on Python
+df3 <- read.csv("/Users/sdw3/Downloads/df4.csv")
+
+```
+
+#### We continue with our data cleaning
+### Time
+```{r}
+library(lubridate)
+#----- We only keep observations from 2003 on wards. 
+df4 <- df3 %>%
+  mutate(date = year(mdy(DATE_FDA_FIRST_RECEIVED_REPORT))) %>%
+  filter(date >= 2003)
+
+
+#-- Visual
+time_based <- df4 %>%
+  group_by(date) %>%
+  summarise(Count = n())
+
+ggplot(time_based, aes(x=date, y = Count)) +
+  geom_bar(stat="identity", color="black") # 2021 saw the most reports!
+
+
+#-- where did the reports come from?
+
+date_focused <- df4 %>%
+  filter(date == 2021) %>%
+  group_by(DESCRIPTION) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+date_focused
+```
+
+
+### Gettin rid of repeated measures data
+```{r}
+#---- New column flagging if a report_log had CONCOMITANT CASES
+df5 <- df4 %>%
+  group_by(REPORT_ID) %>%
+  summarise(concomitant = as.integer(any(PRODUCT_TYPE == "CONCOMITANT"))) %>%
+  right_join(df4, by = "REPORT_ID")
+  
+
+df6 <- df5 %>% # and we just remove all CONCOMITANT (repeated) observations for each user
+  filter(PRODUCT_TYPE != "CONCOMITANT") %>%
+  distinct(REPORT_ID, .keep_all = TRUE)
+```
+
+```{r}
+path <- "/Users/sdw3/Desktop/df6.csv"
+write.csv(df6, file = path, row.names = FALSE)
+
+```
+
+
+#------- Analyses
+
+
+### multinomial logistic regression
+```{r}
+library(nnet)
+library(broom)
+
+
+
+df6$concomitant <- as.factor(df6$concomitant)
+
+#--- Model 3
+fit_3 <- multinom(pref_med_cluster ~ SEX * DESCRIPTION + age_in_years + concomitant,  data = df6)
+summary(fit_3)$coefficients
+
+
+
+tidy_fit <- tidy(fit_3, conf.int = FALSE) #Or Display 2
+
+#----- RESULTS!
+# Seperated into individual tables because of how long they are
+tidy_level_1 <- tidy_fit %>% filter(y.level == "1")
+tidy_level_1
+
+tidy_level_2 <- tidy_fit %>% filter(y.level == "2")
+tidy_level_2
+
+tidy_level_3 <- tidy_fit %>% filter(y.level == "3")
+tidy_level_3
+
+tidy_level_4 <- tidy_fit %>% filter(y.level == "4")
+tidy_level_4
+
+tidy_level_5 <- tidy_fit %>% filter(y.level == "5")
+tidy_level_5
+
+tidy_level_6 <- tidy_fit %>% filter(y.level == "6")
+tidy_level_6
+
+male_table <- tidy_fit %>%
+  filter((grepl("SEXMale:DESCRIPTION", term) | term %in% c("SEXMale", "age_in_years", "concomitant")) & estimate > 0) %>%
+  select(y.level, term, estimate)
+View(male_table)
+
+female_table <- tidy_fit %>%
+  filter((grepl("SEXMale:DESCRIPTION", term) | term %in% c("SEXMale", "age_in_years", "concomitant")) & estimate < 0) %>%
+  select(y.level, term, estimate)
+
+female_table
+
+
+path <- "/Users/sdw3/Desktop/df6.csv"
+write.csv(df6, file = path, row.names = FALSE)
+
+
+levels(df6$concomitant)
+
+```
+
+
+
+
+
+
+
+-------------------------- Infant Data ---------------------
+```{r}
+
+```
+
