@@ -85,4 +85,7 @@ Peanut butter is a common cause of allergy reaction
 ## Vitamins
 A wide variety of vitamins and minerals from various sellers [...]. In the “CHOKING” cluster, vitamins make up about half (50.1%) of the products. Vitamins, minerals and other supplements often take the form of small capsules, so this observation is . We recommend the FDA encourage sellers to place greater emphasis on the choking hazards that their products inherently have.
 
+# Kratom
+Kratom is an herbal supplement that is used by some to alleviate pain and provide an energy boost [1]. The supplement is not regulated by the FDA. Our investigation shows that, upon subtracting out the Exemption 4-listed products, Kratom is the most frequently occuring product (18.6%) in our engineered “DEATH” outcome label.
+![alt text](https://github.com/sayaiken/Rice-University-Dataton-FDA/blob/main/aiken_rice7.webp)
 
