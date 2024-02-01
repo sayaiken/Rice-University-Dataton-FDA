@@ -1,5 +1,8 @@
-# Rice-University-Dataton-FDA
-Rice University Dataton wining Submission
+# Rice University Dataton FDA winnig submission
+
+![alt text](https://github.com/sayaiken/Rice-University-Dataton-FDA/blob/main/rice_aiken8.png)
+
+
 # Data Cleaning
 
 ## “PATIENT_AGE”
