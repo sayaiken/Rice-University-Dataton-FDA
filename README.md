@@ -5,12 +5,18 @@ Rice University Dataton wining Submission
 ## “PATIENT_AGE”
 We quickly see that not all age units are in years (Image 1) so all age values are transformed to actual years, according to what the age_unit is. Once this is done, age over 100 was explored. The range was between 100 -~900. Observations with age over 100 were removed. This is because there were very few observations over 100 (n = ~27) and we assume that the effect of age on health outcomes probably plateaus after a certain age. A value of 100 seems sensible given this hypothesis. 
 ## Image 1
+![alt text](https://github.com/sayaiken/Rice-University-Dataton-FDA/blob/main/Rice_Aiken1.png)
+
 Frequency Count of age_unitss
+
+
 
 Image 2 shows that kids 5 and under make up a notable percentage of the population just on their own. However, they still make up a small percentage of the population. Similar to those who are very old,  health effects are probably different for those who are young. Thus, we remove all patients under 5 years of age and use them for a separate analysis. This also makes our statistical analysis more interpretable since effects would not be considered for those groups that may have unique, group-level, effects. These group level effects could be accounted for with a multilevel analysis. However, such implementations for multinomial variables do not exist unless you are willing to use a Bayesian approach (which none of the team members are familiar with). 
 
 
 ## Image 2
+![alt text](https://github.com/sayaiken/Rice-University-Dataton-FDA/blob/main/Aiken_rice2.png)
+
 Age Distribution After Pre-processing
 
 ## “Description”
@@ -21,12 +27,16 @@ Creating a lookup table of Description, the product categories, shows that some 
 
 
 ## Image 3
+![alt text](https://github.com/sayaiken/Rice-University-Dataton-FDA/blob/main/aiken_rice3.png)
+
 “Product” Values with Frequency Count
 
 ## “SEX”
 Examining the values inside “sex” shows 1693 empty observations. These might as well be “Not Reported” along with “unknown.” Clearly, gender is not balanced (Image 4). We also decide to remove all “Not Reported” observations since we want to account for the effect of gender in our model. Furthermore, we observe that Females outpurchase males and that 2 products lead the number of reports and most of the reports are by women (see Image 5)
  
 ## Image 4
+![alt text](https://github.com/sayaiken/Rice-University-Dataton-FDA/blob/main/aiken_rice4.png)
+
 Provided Gender Values
 
 
@@ -36,6 +46,8 @@ Provided Gender Values
 
 
 ## Image 5
+![alt text](https://github.com/sayaiken/Rice-University-Dataton-FDA/blob/main/aiken_rice5.png)
+
 Product Category given Gender
 
 ## Dates
@@ -48,6 +60,8 @@ The competition document states that we will analyze FDA from 2003 and onwards. 
 
 
 ## Figure 6
+![alt text](https://github.com/sayaiken/Rice-University-Dataton-FDA/blob/main/aiken_rice6.png)
+
 Number of Reports for Each Year
 
 
